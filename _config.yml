@@ -7,7 +7,7 @@ description: "这是子墨的一个博客，用来放平时学的笔记。如果
 keyword: "BY, BY Blog, 子墨的博客, zimo,zimoyin, 子墨, java, python, termux,子墨茵"
 url: "http://zimoyin.github.io"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
-github_repo: "https://github.com/qiubaiying/qiubaiying.github.io.git" # you code repository
+github_repo: "https://github.com/zimoyin/zimoyin.github.io.git" # you code repository "https://github.com/qiubaiying/qiubaiying.github.io.git"
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
