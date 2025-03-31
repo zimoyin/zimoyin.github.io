@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角洲行动摩斯密码破译器</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 98vh;
+            background: #f0f8ff;
+        }
+
+        #output {
+            flex: 1;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 2px solid #2196F3;
+            border-radius: 8px;
+            background: white;
+            overflow-y: auto;
+            font-size: 1.09em;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .morse-btn {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #2196F3;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .morse-btn:active {
+            transform: scale(0.95);
+        }
+
+        .short-btn { background: #4CAF50; }
+        .long-btn { background: #ff5722; }
+        .interrupt-btn { background: #f44336; }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            transform: scale(0);
+            animation: ripple 1s linear;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="output"></div>
+    <div class="btn-container">
+        <button class="morse-btn short-btn" onclick="addDot()">短按（.）</button>
+        <button class="morse-btn long-btn" onclick="addDash()">长按（-）</button>
+        <button class="morse-btn interrupt-btn" onclick="interruptInput()">中断</button>
+    </div>
+
+    <script>
+        const morseDict = {
+            "-----": '0',
+            ".----": '1',
+            "..---": '2',
+            "...--": '3',
+            "....-": '4',
+            ".....": '5',
+            "-....": '6',
+            "--...": '7',
+            "---..": '8',
+            "----.": '9'
+        };
+
+        let currentInput = '';
+        const history = [''];
+        const outputDiv = document.getElementById('output');
+
+        function createRipple(button) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.width = ripple.style.height = '100%';
+            ripple.style.left = '0';
+            ripple.style.top = '0';
+            button.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1000);
+        }
+
+        function addSignal(signal) {
+            currentInput += signal;
+            renderOutput(signal);
+
+            if (currentInput.length === 5) {
+                processInput();
+            }
+        }
+
+        function addDot() {
+            createRipple(event.target);
+            addSignal('.');
+        }
+
+        function addDash() {
+            createRipple(event.target);
+            addSignal('-');
+        }
+
+        function interruptInput() {
+            createRipple(event.target);
+            if (currentInput) {
+                appendOutput(`  →  [输入已中断]`);
+                currentInput = '';
+            }
+        }
+
+        function processInput() {
+            const code = currentInput;
+            let result = morseDict[code];
+
+            if (result) {
+                appendOutput(` →  ${result}`);
+            } else {
+                const correction = autoCorrect(code);
+                if (correction) {
+                    appendOutput(`\n无效编码 ${code}`);
+                    appendOutput(`\n校正编码 ${correction.key}  →  ${correction.value}`);
+                } else {
+                    appendOutput(`\n无效编码: ${code}`);
+                    appendOutput(`\n`);
+                }
+            }
+            currentInput = '';
+        }
+
+        function autoCorrect(code) {
+            for (let i = 0; i < code.length; i++) {
+                const corrected = code.slice(0, i) + (code[i] === '.' ? '-' : '.') + code.slice(i + 1);
+                if (morseDict[corrected]) return { key: corrected, value: morseDict[corrected] };
+            }
+
+            if (code.length > 0 && morseDict[code.slice(0, -1)]) {
+                return { key: code.slice(0, -1), value: morseDict[code.slice(0, -1)] };
+            }
+            return null;
+        }
+
+        function renderOutput(signal) {
+            const lastLine = history[history.length - 1];
+            if (lastLine.includes("→") || lastLine.startsWith('\n')) {
+                history.push(signal);
+            } else {
+                history[history.length - 1] += signal;
+            }
+            outputDiv.textContent = history.join('\n');
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+
+        function appendOutput(text) {
+            history[history.length - 1] += text;
+            outputDiv.textContent = history.join('\n');
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>

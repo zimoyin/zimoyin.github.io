@@ -1,286 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三角洲行动摩斯密码破译器</title>
+    <title>请选择[0,9]摩斯密码破译版本</title>
     <style>
         body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
             display: flex;
-            flex-direction: column;
-            min-height: 98vh;
-            max-height: 98vh;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
             background: #f0f8ff;
+            font-family: Arial, sans-serif;
         }
 
-        #output {
-            flex: 1;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 2px solid #2196F3;
-            border-radius: 8px;
-            background: white;
-            overflow-y: auto;
-            font-size: 1.09em;
-            max-height: 75vh;
+        .button-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
-        .btn-container {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        #inputBtn {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: #2196F3;
+        .nav-button {
+            padding: 15px 30px;
+            font-size: 18px;
             color: white;
             border: none;
-            position: relative;
+            border-radius: 8px;
             cursor: pointer;
-            touch-action: manipulation;
-            transition: transform 0.1s;
-            font-size: 16px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            /* 新增焦点样式修复 */
-            outline: none !important;
-            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        /* 新增焦点状态样式 */
-        #inputBtn:focus {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        #inputBtn:active {
+        .nav-button:active {
             transform: scale(0.95);
         }
 
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.8);
-            transform: scale(0);
-            animation: ripple 1s linear;
+        .btn-1 {
+            background: #2196F3;
         }
 
-        @keyframes ripple {
-            to {
-                transform: scale(2);
-                opacity: 0;
-            }
+        .btn-2 {
+            background: #4CAF50;
         }
 
-        #inputBtn {
-            /* 新增触摸行为控制 */
-            touch-action: none;
+        .nav-button:hover {
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
 
 <body>
-    <div id="output"></div>
-    <div class="btn-container">
-        <button id="inputBtn">按住输入<br><span style="font-size:12px">（长按- / 短按.）</span></button>
+    <div class="button-container">
+        <button class="nav-button btn-1" onclick="window.location.href='index1.html'">版本v1</button>
+        <button class="nav-button btn-2" onclick="window.location.href='index2.html'">版本v2</button>
     </div>
-
-    <script>
-        // 初始化配置
-        let config = {
-            longPressThreshold: 200
-        };
-
-        // 音频上下文和状态
-        let audioContext;
-        let oscillator;
-        let isSoundPlaying = false;
-        let pressStartTime;
-
-        // 初始化对话框
-        const initThreshold = prompt('请输入长按判定阈值（毫秒）:', '200');
-        config.longPressThreshold = parseInt(initThreshold) || 200;
-
-        const morseDict = {
-            "-----": '0',
-            ".----": '1',
-            "..---": '2',
-            "...--": '3',
-            "....-": '4',
-            ".....": '5',
-            "-....": '6',
-            "--...": '7',
-            "---..": '8',
-            "----.": '9'
-        };
-
-        // 状态管理
-        let currentInput = '';
-        let pressTimer;
-        let isLongPress = false;
-        const history = [``];
-
-        // DOM元素
-        const outputDiv = document.getElementById('output');
-        const inputBtn = document.getElementById('inputBtn');
-
-        // 音频控制
-        function startSound() {
-            try {
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-
-                oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.type = 'square';
-                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-
-                oscillator.start();
-                isSoundPlaying = true;
-            } catch (e) {
-                console.log('音频初始化失败');
-            }
-        }
-
-        function stopSound() {
-            if (oscillator && isSoundPlaying) {
-                const now = audioContext.currentTime;
-                oscillator.stop(now + 0.05); // 添加微小延迟防止爆音
-                isSoundPlaying = false;
-            }
-        }
-
-        // 创建中心涟漪
-        function createRipple() {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-
-            // 始终居中
-            ripple.style.width = ripple.style.height = '100%';
-            ripple.style.left = '0';
-            ripple.style.top = '0';
-
-            inputBtn.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 1000);
-        }
-
-        // 信号处理
-        function addSignal(signal) {
-            currentInput += signal;
-            renderOutput(signal);
-
-            if (currentInput.length === 5) {
-                processInput();
-            }
-        }
-
-        function processInput() {
-            const code = currentInput;
-            let result = morseDict[code];
-
-            if (result) {
-                appendOutput(` →  ${result}`);
-            } else {
-                const correction = autoCorrect(code);
-                if (correction) {
-                    appendOutput(`\n无效编码 ${code}`);
-                    appendOutput(`\n校正编码 ${correction.key}  →  ${correction.value}`);
-                } else {
-                    appendOutput(`\n无效编码: ${code}`);
-                    appendOutput(`\n`);
-                }
-            }
-            currentInput = '';
-        }
-
-        // 自动校正
-        function autoCorrect(code) {
-            for (let i = 0; i < code.length; i++) {
-                const corrected = code.slice(0, i) + (code[i] === '.' ? '-' : '.') + code.slice(i + 1);
-                if (morseDict[corrected]) return { key: corrected, value: morseDict[corrected] };
-            }
-
-            if (code.length > 0 && morseDict[code.slice(0, -1)]) {
-                return { key: code.slice(0, -1), value: morseDict[code.slice(0, -1)] };
-            }
-            return null;
-        }
-
-        // 界面更新
-        function renderOutput(signal) {
-            const lastLine = history[history.length - 1];
-            if (lastLine.includes("->") || lastLine.includes("→") || lastLine.startsWith('\n')) {
-                history.push(signal);
-            } else {
-                history[history.length - 1] += signal;
-            }
-            outputDiv.textContent = history.join('\n');
-            outputDiv.scrollTop = outputDiv.scrollHeight;
-        }
-
-        function appendOutput(text) {
-            history[history.length - 1] += text;
-            outputDiv.textContent = history.join('\n');
-            outputDiv.scrollTop = outputDiv.scrollHeight;
-        }
-
-        // 事件处理改进
-        function handleStart(e) {
-            // 只响应主按钮点击（鼠标左键）
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-
-            e.preventDefault();
-            isLongPress = false;
-
-            // 创建中心涟漪
-            createRipple();
-
-            // 记录按压开始时间
-            pressStartTime = Date.now();
-
-            // 启动声音
-            startSound();
-
-            pressTimer = setTimeout(() => {
-                isLongPress = true;
-            }, config.longPressThreshold);
-        }
-
-        function handleEnd(e) {
-            // 只响应主按钮点击（鼠标左键）
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-
-            e.preventDefault();
-            clearTimeout(pressTimer);
-
-            // 停止声音
-            stopSound();
-
-            // 计算持续时间
-            const duration = Date.now() - pressStartTime;
-            const signal = duration > config.longPressThreshold ? '-' : '.';
-
-            addSignal(signal);
-            isLongPress = false;
-        }
-
-        // 事件监听改进（统一使用PointerEvent）
-        inputBtn.addEventListener('pointerdown', handleStart);
-        inputBtn.addEventListener('pointerup', handleEnd);
-        // inputBtn.addEventListener('pointerleave', handleEnd);
-    </script>
 </body>
 
 </html>
