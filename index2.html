@@ -57,9 +57,17 @@
             transform: scale(0.95);
         }
 
-        .short-btn { background: #4CAF50; }
-        .long-btn { background: #ff5722; }
-        .interrupt-btn { background: #f44336; }
+        .short-btn {
+            background: #4CAF50;
+        }
+
+        .long-btn {
+            background: #ff5722;
+        }
+
+        .interrupt-btn {
+            background: #f44336;
+        }
 
         .ripple {
             position: absolute;
@@ -87,6 +95,7 @@
     </div>
 
     <script>
+        let isSoundEnabled = confirm("是否开启声音提示");
         const morseDict = {
             "-----": '0',
             ".----": '1',
@@ -123,22 +132,50 @@
             }
         }
 
+        let audioContext = null;
+
+        function playTone(duration) {
+            if(!isSoundEnabled) return;
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + duration / 1000); // 自动停止
+            } catch (e) {
+                console.error('音频播放失败:', e);
+            }
+        }
+
         function addDot() {
             createRipple(event.target);
             addSignal('.');
+            playTone(100); // 点对应300ms
         }
 
         function addDash() {
             createRipple(event.target);
             addSignal('-');
+            playTone(300); // 划对应900ms
         }
-
         function interruptInput() {
             createRipple(event.target);
             if (currentInput) {
                 appendOutput(`  →  [输入已中断]`);
                 currentInput = '';
             }
+            playTone(400); 
         }
 
         function processInput() {
